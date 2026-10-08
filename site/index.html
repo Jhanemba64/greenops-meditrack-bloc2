@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediTrack Online — Suivi du matériel médical</title>
+  <meta name="description" content="MediTrack Online : plateforme de suivi et de maintenance du matériel médical pour hôpitaux et cliniques en Europe." />
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">
+        <img src="assets/logo.svg" alt="Logo MediTrack" class="brand-logo" />
+        <span class="brand-name">MediTrack<span class="brand-accent">Online</span></span>
+      </a>
+      <nav class="nav">
+        <a href="#services">Services</a>
+        <a href="#securite">Sécurité</a>
+        <a href="#statut">Statut</a>
+        <a href="#contact" class="btn btn-small">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Bandeau d'accueil -->
+    <section class="hero">
+      <div class="container">
+        <p class="eyebrow">Solution cloud pour établissements de santé</p>
+        <h1>Le suivi du matériel médical,<br /> fiable et disponible en continu.</h1>
+        <p class="lead">
+          MediTrack Online accompagne les hôpitaux et cliniques d'Europe dans le
+          suivi et la maintenance de leur matériel médical, avec une infrastructure
+          sécurisée, conforme RGPD et HDS.
+        </p>
+        <div class="hero-actions">
+          <a href="#services" class="btn">Découvrir la plateforme</a>
+          <a href="#statut" class="btn btn-ghost">Voir le statut du service</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Services -->
+    <section id="services" class="section">
+      <div class="container">
+        <h2 class="section-title">Nos services</h2>
+        <div class="cards">
+          <article class="card">
+            <div class="card-icon">📈</div>
+            <h3>Suivi en temps réel</h3>
+            <p>Visualisez l'état et la localisation de chaque équipement médical, 24h/24, depuis une interface unique.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">🛠️</div>
+            <h3>Maintenance préventive</h3>
+            <p>Planifiez les interventions et anticipez les pannes grâce aux alertes automatiques de maintenance.</p>
+          </article>
+          <article class="card">
+            <div class="card-icon">🔒</div>
+            <h3>Conformité RGPD &amp; HDS</h3>
+            <p>Vos données de santé sont hébergées en Europe, chiffrées et protégées selon la réglementation en vigueur.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sécurité -->
+    <section id="securite" class="section section-alt">
+      <div class="container securite-grid">
+        <div>
+          <h2 class="section-title">Une infrastructure sécurisée</h2>
+          <ul class="check-list">
+            <li>Diffusion chiffrée de bout en bout via HTTPS (TLS)</li>
+            <li>Stockage chiffré des données (S3 &amp; disques EBS)</li>
+            <li>Accès aux serveurs limités par le principe du moindre privilège</li>
+            <li>Hébergement des données dans l'Union européenne (région Paris)</li>
+          </ul>
+        </div>
+        <div class="securite-badge">
+          <div class="badge">HDS</div>
+          <div class="badge">RGPD</div>
+          <div class="badge">TLS</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Statut -->
+    <section id="statut" class="section">
+      <div class="container status-box">
+        <span class="status-dot"></span>
+        <div>
+          <h2 class="status-title">Service opérationnel</h2>
+          <p>MediTrack Online est disponible et diffusé mondialement via CloudFront.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="contact" class="site-footer">
+    <div class="container footer-inner">
+      <div>
+        <span class="brand-name">MediTrack<span class="brand-accent">Online</span></span>
+        <p class="footer-note">Suivi et maintenance du matériel médical — Europe.</p>
+      </div>
+      <div class="footer-meta">
+        <p>Déployé avec Terraform &amp; Ansible sur AWS</p>
+        <p>© 2026 MediTrack — Réalisé par GreenOps Solutions</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

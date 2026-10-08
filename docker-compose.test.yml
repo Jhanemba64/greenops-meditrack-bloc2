@@ -1,0 +1,30 @@
+# Environnement de test local : l'image de l'API et une base PostgreSQL temporaire.
+#   docker compose -f docker-compose.test.yml up -d
+#   docker compose -f docker-compose.test.yml down -v
+# Sans --build, c'est l'image déjà construite (celle poussée dans ECR) qui est testée.
+
+services:
+  db:
+    image: postgres:18-alpine # même version majeure que RDS
+    environment:
+      POSTGRES_USER: meditrack_test
+      POSTGRES_PASSWORD: test-local-uniquement
+      POSTGRES_DB: meditrack
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meditrack_test -d meditrack"]
+      interval: 3s
+      retries: 10
+
+  api:
+    build: ./api-backend
+    image: meditrack-api:1.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_USER: meditrack_test
+      DB_NAME: meditrack
+      DB_PASSWORD: test-local-uniquement
+    depends_on:
+      db:
+        condition: service_healthy

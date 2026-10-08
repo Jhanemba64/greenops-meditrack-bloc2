@@ -1,0 +1,16 @@
+/* Style commun des pages de preuves (même rendu que la capture du bloc 1) */
+:root { --ink: #1b2a27; --muted: #5b6b67; --green: #0f9d76; --bg: #f5f8f7; --term: #10201c; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+.page { width: 1300px; margin: 0 auto; padding: 36px 0 30px; }
+h1 { margin: 0; font-size: 32px; }
+h1 span { color: var(--green); }
+.sub { color: var(--muted); margin: 6px 0 26px; font-size: 17px; }
+.card { background: #fff; border: 1px solid #e1e8e6; border-radius: 14px; padding: 20px 24px 22px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.card h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-size: 20px; }
+.badge { background: var(--green); color: #fff; font-size: 12.5px; font-weight: 800; padding: 3px 9px; border-radius: 9px; }
+pre { margin: 0; background: var(--term); color: #e6edf3; border-radius: 10px; padding: 16px 18px; font: 15px/1.6 Consolas, "Cascadia Mono", monospace; white-space: pre-wrap; word-break: break-all; }
+.c { color: #7cc7ff; }          /* commande */
+.ok { color: #3ddc97; font-weight: 700; }  /* résultat attendu */
+.ko { color: #ff8a80; font-weight: 700; }  /* refus volontaire */
+.cm { color: #8b9b97; }         /* commentaire */

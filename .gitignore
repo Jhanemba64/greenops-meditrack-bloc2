@@ -1,0 +1,24 @@
+# Identifiants
+*.pem
+*.key
+.aws/
+credentials
+.env
+
+# Terraform (le state contient des informations sensibles)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+*.tfvars
+!example.tfvars
+
+# Node
+node_modules/
+
+# Énoncé fourni par l'école
+Enonce_*.pdf
+
+*.log
+.DS_Store

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>MediTrack - Preuves</title>
+<link rel="stylesheet" href="style-preuves.css">
+</head>
+<body>
+<div class="page">
+  <h1>MediTrack - <span>Vérifications du déploiement (bloc 2)</span></h1>
+  <div class="sub">Étude de cas GreenOps Solutions, API conteneurisée (Docker, ECR, RDS, ECS Fargate, ALB), région eu-west-3</div>
+
+  <div class="card">
+    <h2><span class="badge">Ex 1</span>Image Docker construite et poussée dans ECR</h2>
+<pre><span class="c">$ docker build --platform linux/amd64 --provenance=false -t meditrack-api:1.0.0 .</span>
+#10 naming to docker.io/library/meditrack-api:1.0.0 <span class="ok">done</span>
+<span class="c">$ docker push 971598352115.dkr.ecr.eu-west-3.amazonaws.com/meditrack-api:1.0.0</span>
+1.0.0: digest: <span class="ok">sha256:3f45384c93f4…c741ea</span> size: 1874
+<span class="c">$ aws ecr describe-repositories --repository-names meditrack-api</span>
+Mutabilite = <span class="ok">IMMUTABLE</span>   Scan = <span class="ok">True</span>   Chiffrement = <span class="ok">AES256</span>
+<span class="c">$ aws ecr describe-image-scan-findings --image-id imageTag=1.0.0</span>
+Statut = COMPLETE   CRITICAL = <span class="ko">5</span>  HIGH = <span class="ko">20</span>  MEDIUM = 17  LOW = 7   <span class="cm"># openssl/musl/zlib de node:18-alpine</span></pre>
+  </div>
+
+  <div class="card">
+    <h2><span class="badge">Ex 2</span>Base RDS PostgreSQL privée et chiffrée</h2>
+<pre><span class="c">$ aws rds describe-db-instances --db-instance-identifier meditrack-db</span>
+Classe = db.t3.micro   Moteur = postgres 18.3   VPC = vpc-05b0b271096dfb0b5 (meditrack-vpc)
+GroupeSousReseaux = meditrack-db-subnets   AccessiblePubliquement = <span class="ok">False</span>   StockageChiffre = <span class="ok">True</span>
+<span class="c">$ aws ec2 describe-subnets</span>   <span class="cm"># sous-réseaux de la base</span>
+meditrack-private-subnet-1   10.0.11.0/24   eu-west-3a   IP publique auto = <span class="ok">False</span>
+meditrack-private-subnet-2   10.0.12.0/24   eu-west-3b   IP publique auto = <span class="ok">False</span>
+<span class="c">$ nslookup meditrack-db.czeawkk0g5zw.eu-west-3.rds.amazonaws.com</span>   <span class="cm"># depuis mon PC</span>
+Address:  <span class="ok">10.0.11.172</span>   <span class="cm"># adresse privée du VPC</span>
+<span class="c">$ aws rds describe-db-parameters --db-parameter-group-name default.postgres18</span>
+rds.force_ssl = <span class="ok">1</span>   <span class="cm"># TLS obligatoire</span></pre>
+  </div>
+
+  <div class="card">
+    <h2><span class="badge">Ex 3</span>API déployée sur ECS Fargate derrière l'ALB</h2>
+<pre><span class="c">$ terraform apply</span>
+aws_ecs_service.api: Creation complete after 1m26s
+Apply complete! Resources: <span class="ok">41 added</span>, 0 changed, 0 destroyed.
+api_url = "http://meditrack-api-alb-764461901.eu-west-3.elb.amazonaws.com"
+<span class="c">$ aws ecs describe-services --cluster meditrack-cluster --services meditrack-api-service</span>
+Statut = <span class="ok">ACTIVE</span>   Souhaite = 2   EnCours = <span class="ok">2</span>   Lancement = FARGATE   Deploiement = <span class="ok">COMPLETED</span>
+<span class="c">$ aws elbv2 describe-target-health</span>   <span class="cm"># cibles de l'ALB</span>
+10.0.11.83    eu-west-3a   3000   <span class="ok">healthy</span>
+10.0.12.155   eu-west-3b   3000   <span class="ok">healthy</span>   <span class="cm"># IP privées uniquement</span>
+<span class="c">$ aws logs tail /ecs/meditrack-api</span>
+Serveur API démarré sur le port 3000
+Tentative de connexion à la BDD...
+<span class="ok">Succès : Table 'contacts' vérifiée/créée.</span>   <span class="cm"></span></pre>
+  </div>
+
+  <div class="card">
+    <h2><span class="badge">Sécurité</span>Groupes de sécurité</h2>
+<pre><span class="c">$ aws ec2 describe-security-group-rules</span>   <span class="cm"># règles entrantes</span>
+meditrack-alb-sg   tcp 80     depuis <span class="ok">0.0.0.0/0</span>             HTTP depuis Internet
+meditrack-ecs-sg   tcp 3000   depuis <span class="ok">meditrack-alb-sg</span>      API depuis le Load Balancer uniquement
+meditrack-rds-sg   tcp 5432   depuis <span class="ok">meditrack-ecs-sg</span>      PostgreSQL depuis les conteneurs API uniquement
+<span class="cm"># sorties : ALB vers ECS (3000), ECS vers RDS (5432) et 443, aucune pour RDS</span></pre>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>MediTrack - Test de l'API</title>
+<link rel="stylesheet" href="style-preuves.css">
+</head>
+<body>
+<div class="page">
+  <h1>MediTrack - <span>Test fonctionnel de l'API (cURL)</span></h1>
+  <div class="sub">Requêtes envoyées depuis mon poste vers l'URL publique du Load Balancer, le 8 octobre 2026</div>
+
+  <div class="card">
+    <h2><span class="badge">POST</span>Enregistrement d'un contact (201 Created)</h2>
+<pre><span class="c">$ curl -i -X POST http://meditrack-api-alb-764461901.eu-west-3.elb.amazonaws.com/contact \
+    -H "Content-Type: application/json" \
+    -d '{"nom":"Service biomedical","email":"biomed@example.com","message":"Contrat de maintenance annuel"}'</span>
+HTTP/1.1 <span class="ok">201 Created</span>
+Date: Thu, 08 Oct 2026 16:49:30 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 143
+Connection: keep-alive
+X-Powered-By: Express
+ETag: W/"8f-m6jQe7Wj9T4tCzFiOUczZ3tC+Ss"
+
+{"id":<span class="ok">2</span>,"nom":"Service biomedical","email":"biomed@example.com","message":"Contrat de maintenance annuel","cree_le":"2026-10-08T16:49:30.288Z"}</pre>
+  </div>
+
+  <div class="card">
+    <h2><span class="badge">GET</span>Lecture des contacts enregistrés dans RDS (200 OK)</h2>
+<pre><span class="c">$ curl -i http://meditrack-api-alb-764461901.eu-west-3.elb.amazonaws.com/contacts</span>
+HTTP/1.1 <span class="ok">200 OK</span>
+Date: Thu, 08 Oct 2026 16:49:30 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 304
+Connection: keep-alive
+X-Powered-By: Express
+ETag: W/"130-RLAJF47+59wL4mXhay7D0SH+O0U"
+
+[{"id":<span class="ok">2</span>,"nom":"Service biomedical","email":"biomed@example.com","message":"Contrat de maintenance annuel","cree_le":"2026-10-08T16:49:30.288Z"},{"id":<span class="ok">1</span>,"nom":"Nathalie Garnier","email":"n.garnier@meditrack.fr","message":"Demande de maintenance - echographe bloc B","cree_le":"2026-10-08T16:46:37.653Z"}]
+<span class="cm"># les deux contacts envoyés sont bien en base</span></pre>
+  </div>
+
+  <div class="card">
+    <h2><span class="badge">POST</span>Requête incomplète refusée par l'API (400)</h2>
+<pre><span class="c">$ curl -i -X POST http://meditrack-api-alb-764461901.eu-west-3.elb.amazonaws.com/contact \
+    -H "Content-Type: application/json" -d '{"message":"sans nom ni email"}'</span>
+HTTP/1.1 <span class="ko">400 Bad Request</span>
+Date: Thu, 08 Oct 2026 16:49:30 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 42
+Connection: keep-alive
+X-Powered-By: Express
+ETag: W/"2a-ug2a5repjytBANMMmQkB4OgGsMA"
+
+{"error":"Le nom et l'email sont requis."}   <span class="cm"># nom et email obligatoires</span></pre>
+  </div>
+</div>
+</body>
+</html>

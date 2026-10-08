@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>MediTrack - Architecture</title>
+<style>
+  :root {
+    --ink: #1b2a27; --muted: #5b6b67; --green: #0f9d76; --bg: #f5f8f7;
+    --aws: #232F3E; --net: #8C4FFF; --compute: #ED7100; --db: #3B48CC;
+    --storage: #7AA116; --sec: #DD344C; --mgmt: #E7157B;
+    --pub-bg: #F3F8E8; --pub-bd: #7AA116; --priv-bg: #E8F6F7; --priv-bd: #00A4A6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  .page { width: 1600px; padding: 28px 36px 32px; }
+  h1 { margin: 0; font-size: 30px; }
+  h1 span { color: var(--green); }
+  .sub { color: var(--muted); margin: 6px 0 18px; font-size: 16px; }
+
+  .diagram { position: relative; display: grid; grid-template-columns: 210px 1fr; column-gap: 100px; margin-top: 26px; }
+  .left { position: relative; }
+  svg#links { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; overflow: visible; pointer-events: none; }
+
+  .group { position: relative; border-radius: 12px; }
+  .tag { position: absolute; top: 0; left: 0; padding: 6px 12px; font-size: 13px; font-weight: 700; color: #fff; border-radius: 10px 0 10px 0; }
+  .aws { margin-top: 104px; border: 2px solid var(--aws); background: #fff; padding: 46px 24px 24px; }
+  .aws > .tag { background: var(--aws); }
+  .services { display: grid; grid-template-columns: repeat(6, 1fr); gap: 28px; }
+  .vpc { margin-top: 92px; border: 2px solid var(--net); padding: 46px 24px 24px 44px; }
+  .vpc > .tag { background: var(--net); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 235px 335px; gap: 36px 20px; }
+  .subnet { position: relative; border-radius: 8px; }
+  .subnet .lbl { position: absolute; z-index: 2; top: 8px; left: 12px; padding: 0 4px; background: inherit; font-size: 12.5px; font-weight: 600; }
+  .public { background: var(--pub-bg); border: 1.5px solid var(--pub-bd); }
+  .public .lbl { color: #4d6b0d; }
+  .private { background: var(--priv-bg); border: 1.5px solid var(--priv-bd); }
+  .private .lbl { color: #00727a; }
+
+  .node { position: relative; z-index: 2; background: #fff; border: 1px solid #d7e0dd; border-left: 5px solid var(--c); border-radius: 8px; padding: 9px 11px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .node .t { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14.5px; }
+  .node .b { display: inline-block; min-width: 34px; padding: 2px 5px; border-radius: 5px; background: var(--c); color: #fff; font-size: 11px; font-weight: 800; text-align: center; letter-spacing: .3px; }
+  .node .d { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+  .node .sg { font-size: 11.5px; color: #a3283b; margin-top: 5px; font-weight: 600; }
+  .actor { position: absolute; left: 0; width: 210px; --c: #5b6b67; }
+
+  .abs { position: absolute; }
+  #pubA { grid-area: 1 / 1; } #pubB { grid-area: 1 / 2; } #privA { grid-area: 2 / 1; } #privB { grid-area: 2 / 2; }
+  #alb { grid-column: 1 / 3; grid-row: 1; align-self: end; justify-self: center; width: 410px; margin-bottom: 18px; }
+  #nat { left: 330px; top: 40px; width: 205px; }
+  #igw { left: -46px; width: 92px; padding: 7px 6px; text-align: center; }
+  #igw .t { justify-content: center; }
+  .task { left: 50%; transform: translateX(-50%); top: 88px; width: 330px; }
+  #rds { left: 50%; transform: translateX(-50%); top: 222px; width: 330px; }
+
+  .legend { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 18px; font-size: 13.5px; color: var(--muted); align-items: center; }
+  .legend i { display: inline-block; width: 34px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 8px; }
+  .legend b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>MediTrack - <span>Architecture de l'API conteneurisée</span></h1>
+  <div class="sub">Étude de cas GreenOps Solutions, bloc 2, AWS eu-west-3 (Paris), infrastructure décrite en Terraform</div>
+
+  <div class="diagram" id="diagram">
+    <svg id="links"></svg>
+
+    <!-- Acteurs (hors AWS) -->
+    <div class="left">
+      <div class="node actor" id="admin"><div class="t">Administrateur</div><div class="d">Mon poste : Docker, Terraform,<br>AWS CLI (utilisateur IAM dédié)</div></div>
+      <div class="node actor" id="user"><div class="t">Visiteur</div><div class="d">Site MediTrack Online (bloc 1)</div></div>
+      <div class="node actor" id="client"><div class="t">Client de l'API</div><div class="d">cURL · Postman<br>formulaire de contact</div></div>
+    </div>
+
+    <!-- AWS -->
+    <div class="group aws" id="aws">
+      <div class="tag">AWS Cloud · Région eu-west-3 (Paris)</div>
+
+      <div class="services">
+        <div class="node" id="cf" style="--c: var(--net)"><div class="t"><span class="b">CF</span>CloudFront</div><div class="d">HTTPS forcé<br>certificat TLS AWS</div></div>
+        <div class="node" id="s3" style="--c: var(--storage)"><div class="t"><span class="b">S3</span>Bucket S3</div><div class="d">site statique (bloc 1)<br>privé · chiffré · OAC</div></div>
+        <div class="node" id="ecr" style="--c: var(--compute)"><div class="t"><span class="b">ECR</span>Dépôt privé</div><div class="d">meditrack-api:<b>1.0.0</b><br>tag immuable · scan</div></div>
+        <div class="node" id="sm" style="--c: var(--sec)"><div class="t"><span class="b">SM</span>Secrets Manager</div><div class="d">mot de passe de la BDD<br>(généré par RDS)</div></div>
+        <div class="node" id="cw" style="--c: var(--mgmt)"><div class="t"><span class="b">CW</span>CloudWatch</div><div class="d">logs de l'API<br>Container Insights</div></div>
+        <div class="node" id="iam" style="--c: var(--sec)"><div class="t"><span class="b">IAM</span>Rôle d'exécution</div><div class="d">ECS lit ECR, les logs<br>et <b>ce</b> secret seulement</div></div>
+      </div>
+
+      <div class="group vpc" id="vpc">
+        <div class="tag">VPC meditrack-vpc · 10.0.0.0/16</div>
+        <div class="node abs" id="igw" style="--c: var(--net)"><div class="t"><span class="b">IGW</span></div><div class="d">Internet Gateway</div></div>
+
+        <div class="grid">
+          <div class="subnet public" id="pubA"><div class="lbl">Sous-réseau public 1 · 10.0.1.0/24 · eu-west-3a</div>
+            <div class="node abs" id="nat" style="--c: var(--net)"><div class="t"><span class="b">NAT</span>NAT Gateway</div><div class="d">sortie Internet des<br>sous-réseaux privés</div></div>
+          </div>
+          <div class="subnet public" id="pubB"><div class="lbl">Sous-réseau public 2 · 10.0.2.0/24 · eu-west-3b</div></div>
+
+          <div class="node" id="alb" style="--c: var(--net)"><div class="t"><span class="b">ALB</span>Application Load Balancer</div><div class="d">meditrack-api-alb · public · HTTP 80 · 2 zones</div><div class="sg">SG alb : 80 depuis Internet (0.0.0.0/0)</div></div>
+
+          <div class="subnet private" id="privA"><div class="lbl">Sous-réseau privé 1 · 10.0.11.0/24 · eu-west-3a</div>
+            <div class="node abs task" id="taskA" style="--c: var(--compute)"><div class="t"><span class="b">ECS</span>Tâche Fargate n°1</div><div class="d">conteneur meditrack-api:1.0.0 · port 3000</div><div class="sg">SG ecs : 3000 depuis l'ALB uniquement</div></div>
+            <div class="node abs" id="rds" style="--c: var(--db)"><div class="t"><span class="b">RDS</span>PostgreSQL 18 · db.t3.micro</div><div class="d">meditrack-db · chiffrée · <b>non publique</b></div><div class="sg">SG rds : 5432 depuis ECS uniquement</div></div>
+          </div>
+          <div class="subnet private" id="privB"><div class="lbl">Sous-réseau privé 2 · 10.0.12.0/24 · eu-west-3b</div>
+            <div class="node abs task" id="taskB" style="--c: var(--compute)"><div class="t"><span class="b">ECS</span>Tâche Fargate n°2</div><div class="d">conteneur meditrack-api:1.0.0 · port 3000</div><div class="sg">SG ecs : 3000 depuis l'ALB uniquement</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i style="border-color: var(--net)"></i><b>Trafic des utilisateurs</b> (HTTP / HTTPS)</span>
+    <span><i style="border-color: var(--compute)"></i><b>Flux internes</b> ALB, API et base</span>
+    <span><i style="border-color: #7a8a86; border-top-style: dashed"></i><b>Sortie via la NAT</b> (443 : image, secret, logs)</span>
+    <span><i style="border-color: var(--green); border-top-style: dashed"></i><b>Déploiement</b> (docker push)</span>
+  </div>
+</div>
+
+<script>
+(() => {
+const D = document.getElementById('diagram');
+const svg = document.getElementById('links');
+const $ = id => document.getElementById(id);
+const box = id => { const r = $(id).getBoundingClientRect(), o = D.getBoundingClientRect();
+  return { l: r.left - o.left, r: r.right - o.left, t: r.top - o.top, b: r.bottom - o.top,
+           cx: (r.left + r.right) / 2 - o.left, cy: (r.top + r.bottom) / 2 - o.top }; };
+
+// 1) Alignement des acteurs et de l'IGW sur leurs cibles
+const place = (id, y) => { $(id).style.top = (y - $(id).offsetHeight / 2) + 'px'; };
+place('admin', 40);
+place('user', box('cf').cy);
+place('client', box('alb').cy);
+$('igw').style.top = (box('alb').cy - box('vpc').t - $('igw').offsetHeight / 2) + 'px';
+
+// 2) Dessin des liens
+const NS = 'http://www.w3.org/2000/svg';
+const defs = document.createElementNS(NS, 'defs');
+svg.appendChild(defs);
+const marker = color => { const id = 'm' + color.replace(/[^a-z0-9]/gi, '');
+  if (!$(id)) { const m = document.createElementNS(NS, 'marker');
+    Object.entries({ id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }).forEach(([k, v]) => m.setAttribute(k, v));
+    m.innerHTML = `<path d="M0,0 L10,5 L0,10 z" fill="${color}"/>`; defs.appendChild(m); }
+  return `url(#${id})`; };
+const label = (x, y, text, color) => {
+  const g = document.createElementNS(NS, 'g');
+  const t = document.createElementNS(NS, 'text');
+  t.setAttribute('x', x); t.setAttribute('y', y + 4); t.setAttribute('text-anchor', 'middle');
+  t.setAttribute('font-size', '12.5'); t.setAttribute('font-weight', '700'); t.setAttribute('fill', color);
+  t.textContent = text; g.appendChild(t); svg.appendChild(g);
+  const bb = t.getBBox(); const r = document.createElementNS(NS, 'rect');
+  Object.entries({ x: bb.x - 6, y: bb.y - 3, width: bb.width + 12, height: bb.height + 6, rx: 9, fill: '#fff', stroke: color, 'stroke-width': 1 }).forEach(([k, v]) => r.setAttribute(k, v));
+  g.insertBefore(r, t); };
+const link = (pts, { color, dash, text, at = 0.5, seg = 0, both = false, head = true }) => {
+  const p = document.createElementNS(NS, 'path');
+  p.setAttribute('d', pts.map((q, i) => (i ? 'L' : 'M') + q[0] + ',' + q[1]).join(' '));
+  p.setAttribute('fill', 'none'); p.setAttribute('stroke', color); p.setAttribute('stroke-width', 2.2);
+  if (dash) p.setAttribute('stroke-dasharray', '7 5');
+  if (head) p.setAttribute('marker-end', marker(color));
+  if (both) p.setAttribute('marker-start', marker(color));
+  svg.appendChild(p);
+  if (text) { const [a, b] = [pts[seg], pts[seg + 1]]; label(a[0] + (b[0] - a[0]) * at, a[1] + (b[1] - a[1]) * at, text, color); } };
+
+const NET = '#8C4FFF', CMP = '#ED7100', OUT = '#7a8a86', DEP = '#0f9d76';
+const A = box('admin'), U = box('user'), C = box('client'), CF = box('cf'), S3 = box('s3'), ECR = box('ecr'),
+      SM = box('sm'), CW = box('cw'), IGW = box('igw'), ALB = box('alb'), NAT = box('nat'),
+      TA = box('taskA'), TB = box('taskB'), RDS = box('rds'), PUB = box('pubA'), SERV = box('cf');
+
+// Déploiement : docker push vers ECR
+link([[A.r, A.cy], [ECR.cx, A.cy], [ECR.cx, ECR.t]], { color: DEP, dash: true, text: 'docker push meditrack-api:1.0.0', seg: 0, at: 0.55 });
+// Site statique (bloc 1)
+link([[U.r, U.cy], [CF.l, CF.cy]], { color: NET, text: 'HTTPS 443', at: 0.42 });
+link([[CF.r, CF.cy], [S3.l, S3.cy]], { color: NET });
+// API : client -> IGW -> ALB
+link([[C.r, C.cy], [IGW.l, IGW.cy]], { color: NET, text: 'HTTP 80', at: 0.5 });
+link([[IGW.r, IGW.cy], [ALB.l, ALB.cy]], { color: NET });
+// ALB -> tâches (port 3000)
+const yMid = PUB.b + 18;
+link([[ALB.cx - 120, ALB.b], [ALB.cx - 120, yMid], [TA.cx, yMid], [TA.cx, TA.t]], { color: CMP, text: '3000', seg: 1, at: 0.5 });
+link([[ALB.cx + 120, ALB.b], [ALB.cx + 120, yMid], [TB.cx, yMid], [TB.cx, TB.t]], { color: CMP, text: '3000', seg: 1, at: 0.5 });
+// Tâches -> RDS (5432 chiffré)
+link([[TA.cx, TA.b], [TA.cx, RDS.t]], { color: CMP, text: '5432 (TLS)', at: 0.5 });
+link([[TB.cx, TB.b], [TB.cx, RDS.cy], [RDS.r, RDS.cy]], { color: CMP, text: '5432 (TLS)', seg: 1, at: 0.5 });
+// Sortie des tâches via la NAT vers ECR / Secrets Manager / CloudWatch
+const yBus = (box('cf').b + box('vpc').t) / 2 + 8;
+link([[NAT.cx, NAT.t], [NAT.cx, yBus], [CW.cx, yBus], [CW.cx, CW.b]], { color: OUT, dash: true, text: '443 : image, secret, logs', seg: 1, at: 0.3 });
+link([[ECR.cx, yBus], [ECR.cx, ECR.b]], { color: OUT, dash: true });
+link([[SM.cx, yBus], [SM.cx, SM.b]], { color: OUT, dash: true });
+
+// 3) Cadre du service ECS autour des 2 tâches (étiquette entre les 2 tâches)
+const pad = 14, yTop = TA.t - 48;
+const rect = document.createElementNS(NS, 'rect');
+Object.entries({ x: TA.l - pad, y: yTop, width: TB.r - TA.l + 2 * pad, height: TA.b - yTop + pad, rx: 10, fill: 'none', stroke: CMP, 'stroke-width': 1.8, 'stroke-dasharray': '4 4' }).forEach(([k, v]) => rect.setAttribute(k, v));
+svg.appendChild(rect);
+['Cluster ECS meditrack-cluster', 'service meditrack-api-service · 2 tâches Fargate (1 par zone)'].forEach((txt, i) => {
+  const lt = document.createElementNS(NS, 'text');
+  Object.entries({ x: (TA.cx + TB.cx) / 2, y: yTop + 19 + i * 17, 'text-anchor': 'middle', 'font-size': 12.5, 'font-weight': 700, fill: '#b35400' }).forEach(([k, v]) => lt.setAttribute(k, v));
+  lt.textContent = txt; svg.appendChild(lt);
+  const bb = lt.getBBox(), bg = document.createElementNS(NS, 'rect');
+  Object.entries({ x: bb.x - 6, y: bb.y - 1, width: bb.width + 12, height: bb.height + 2, fill: '#fff' }).forEach(([k, v]) => bg.setAttribute(k, v));
+  svg.insertBefore(bg, lt); });
+})();
+</script>
+</body>
+</html>
