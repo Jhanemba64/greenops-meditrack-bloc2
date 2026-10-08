@@ -17,8 +17,10 @@ crash.log
 # Node
 node_modules/
 
-# Énoncé fourni par l'école
+# Énoncé et comptes rendus (rendus à l'école, hors dépôt)
 Enonce_*.pdf
+Compte-rendu_*
+assets/
 
 *.log
 .DS_Store

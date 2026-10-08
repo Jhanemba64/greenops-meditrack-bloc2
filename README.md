@@ -4,8 +4,6 @@
 
 L'API de contact de MediTrack est conteneurisée avec Docker, stockée dans un dépôt ECR privé et exécutée sur ECS Fargate derrière un Application Load Balancer. Les données sont stockées dans une base RDS PostgreSQL placée dans des sous-réseaux privés. Toute l'infrastructure est décrite en Terraform, y compris le site statique du bloc 1 (S3 et CloudFront).
 
-Le détail de la démarche, les captures et les vérifications sont dans le compte rendu : [Compte-rendu_EDC-GreenOps-Bloc2.md](Compte-rendu_EDC-GreenOps-Bloc2.md) (également disponible en [PDF](Compte-rendu_EDC-GreenOps-Bloc2.pdf)).
-
 ![Architecture](captures/00-schema-architecture.png)
 
 ## Contenu
@@ -17,7 +15,7 @@ Le détail de la démarche, les captures et les vérifications sont dans le comp
 | `docker-compose.test.yml` | Environnement de test local : l'API et une base PostgreSQL temporaire |
 | `aws-iam/` | Politique IAM de l'utilisateur de déploiement |
 | `site/` | Site statique MediTrack Online (bloc 1) |
-| `captures/` | Captures du compte rendu ; `sources/` contient le schéma et les pages de preuves en HTML |
+| `captures/` | Captures de la console AWS et des tests ; `sources/` contient le schéma et les pages de preuves en HTML |
 
 ## Prérequis
 
